@@ -1,7 +1,8 @@
+require './CStack.rb'
 require './Draw.rb'
-require './Utils.rb'
-require './MatrixUtils.rb'
 require './Matrix.rb'
+require './MatrixUtils.rb'
+require './Utils.rb'
 
 include Math
 
@@ -16,11 +17,12 @@ $DRAW_COLOR = [255, 105, 180] # [r, g, b]
 $INFILE = "script"
 $OUTFILE = "image.ppm"
 $TEMPFILE = "temmmmp.ppm" # Used as temp storage for displaying
-$dt = 0.1 # The amount that the parametric t is incremented by on each loop
+$dt = 0.05 # The amount that the parametric t is incremented by on each loop
 
 # Static
 $GRID = Utils.create_grid()
-$TRAN_MAT = MatrixUtils.identity(4) # Transformations matrix
+#$TRAN_MAT = MatrixUtils.identity(4) # Being deprecated
+$COORDSYS = CStack.new()
 $EDGE_MAT = Matrix.new(4, 0) # Edge matrix
 $POLY_MAT = Matrix.new(4, 0) # Polygon matrix
 $RC = $DRAW_COLOR[0] # Red component

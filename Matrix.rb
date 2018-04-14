@@ -37,7 +37,7 @@ class Matrix
     for row in @data
       for datum in row
         ret+= "nil" if !datum
-        ret+= datum.to_i.to_s + "\t"
+        ret+= datum.to_f.to_s + "\t"
       end
       ret+= "\n"
     end
@@ -73,7 +73,7 @@ class Matrix
   #Add a collumn. Data is a list of what should be entered
   def add_col(data)
     for i in (0...@rows)
-      @data[i][@cols] = data[i]
+      @data[i][@cols] = data[i].to_f
     end
     @cols += 1
   end

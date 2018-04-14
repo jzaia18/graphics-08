@@ -15,16 +15,13 @@ module Utils
 
 
   ## Write GRID to OUTFILE
-  def self.write_out(file: $OUTFILE, mat: $POLY_MAT, polygon_mode: true)
+  def self.write_out(file: $OUTFILE, polymat: $POLY_MAT, edgemat: $EDGE_MAT)
     puts "Writing out to #{file}" if $DEBUGGING
     extension = file.dup #filename with any extension
     file[file.index('.')..-1] = '.ppm'
     $GRID = create_grid()
-    if polygon_mode
-      Draw.push_polygon_matrix(polymat: mat)
-    else
-      Draw.push_edge_matrix(edgemat: mat)
-    end
+    Draw.push_polygon_matrix(polymat: polymat)
+    Draw.push_edge_matrix(edgemat: edgemat)
     outfile = File.open(file, 'w')
     outfile.puts "P3 #$RESOLUTION #$RESOLUTION 255" #Header in 1 line
 
@@ -54,10 +51,6 @@ module Utils
     $GRID = create_grid()
   end
 
-  def self.apply_transformations(mat: $POLY_MAT, tran_mat: $TRAN_MAT)
-    MatrixUtils.multiply(tran_mat, mat)
-  end
-
   def self.parse_file(filename: $INFILE)
     file = File.new(filename, "r")
     while (line = file.gets)
@@ -68,7 +61,12 @@ module Utils
         args = file.gets.chomp.split(" ")
         for i in (0...6); args[i] = args[i].to_f end
         puts "With arguments: "  + args.to_s if $DEBUGGING
-        Draw.add_edge(args[0], args[1], args[2], args[3], args[4], args[5])
+        temp = Matrix.new(4,0)
+        temp.add_col([args[0], args[1], args[2], 1])
+        temp.add_col([args[3], args[4], args[5], 1])
+        MatrixUtils.multiply($COORDSYS.peek(), temp)
+        puts temp
+        Draw.add_edge(temp.get(0,0), temp.get(1,0), temp.get(2,0), temp.get(0,1), temp.get(1,1), temp.get(2,1))
       when "circle"
         args = file.gets.chomp.split(" ")
         for i in (0...4); args[i] = args[i].to_f end
@@ -102,27 +100,27 @@ module Utils
       when "clear"
         $EDGE_MAT = Matrix.new(4, 0)
         $POLY_MAT = Matrix.new(4, 0)
-      when "ident"
-        $TRAN_MAT = MatrixUtils.identity(4)
       when "scale"
         args = file.gets.chomp.split(" ")
         for i in (0...3); args[i] = args[i].to_f end
         puts "With arguments: "  + args.to_s if $DEBUGGING
         scale = MatrixUtils.dilation(args[0], args[1], args[2])
-        MatrixUtils.multiply(scale, $TRAN_MAT)
+        $COORDSYS.modify_top(scale);
       when "move"
         args = file.gets.chomp.split(" ")
         for i in (0...3); args[i] = args[i].to_f end
         puts "With arguments: "  + args.to_s if $DEBUGGING
         move = MatrixUtils.translation(args[0], args[1], args[2])
-        MatrixUtils.multiply(move, $TRAN_MAT)
+        $COORDSYS.modify_top(move);
       when "rotate"
         args = file.gets.chomp.split(" ")
         puts "With arguments: "  + args.to_s if $DEBUGGING
         rotate = MatrixUtils.rotation(args[0], args[1].to_f)
-        MatrixUtils.multiply(rotate, $TRAN_MAT)
-      when "apply"
-        apply_transformations()
+        $COORDSYS.modify_top(rotate);
+      when "pop"
+        $COORDSYS.pop()
+      when "push"
+        $COORDSYS.push()
       when "display"
         display();
       when "save"

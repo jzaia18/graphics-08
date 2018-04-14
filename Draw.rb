@@ -82,15 +82,22 @@ module Draw
   end
 
   # Circle
-  def self.circle(cx, cy, cz, rad)
+  def self.circle(cx, cy, cz, rad, edgemat: $EDGE_MAT)
+    temp = Matrix.new(4,0)
     t = 0
     while (t < 1)
-      add_edge(cx + rad * cos($TAU * t), cy + rad * sin($TAU * t), cz, cx + rad * cos($TAU * (t + $dt)), cy + rad * sin($TAU * (t + $dt)), cz )
+      add_edge(cx + rad * cos($TAU * t), cy + rad * sin($TAU * t), cz, cx + rad * cos($TAU * (t + $dt)), cy + rad * sin($TAU * (t + $dt)), cz, mat: temp)
       t += $dt
+    end
+    MatrixUtils.multiply($COORDSYS.peek(), temp)
+    for i in (0...temp.cols)
+      point = temp.get_col(i)
+      add_point(point[0], point[1], point[2], edgemat)
     end
   end
 
-  def self.cubic(ax, bx, cx, dx, ay, by, cy, dy)
+  def self.cubic(ax, bx, cx, dx, ay, by, cy, dy, edgemat: $EDGE_MAT)
+    temp = Matrix.new(4,0)
     t = 0
     while t < 1
       x0 = ax*(t**3) + bx*(t**2) + cx*t + dx
@@ -98,7 +105,12 @@ module Draw
       t+= $dt
       x1 = ax*(t**3) + bx*(t**2) + cx*t + dx
       y1 = ay*(t**3) + by*(t**2) + cy*t + dy
-      add_edge(x0, y0, 0, x1, y1, 0)
+      add_edge(x0, y0, 0, x1, y1, 0, mat: temp)
+    end
+    MatrixUtils.multiply($COORDSYS.peek(), temp)
+    for i in (0...temp.cols)
+      point = temp.get_col(i)
+      add_point(point[0], point[1], point[2], edgemat)
     end
   end
 
@@ -225,7 +237,7 @@ module Draw
     return ret
   end
 
-  # Helper for add_edge
+  # Helper for add_edge/add_polygon
   def self.add_point(x, y, z, mat)
     mat.add_col([x, y, z, 1])
   end

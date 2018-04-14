@@ -1,0 +1,10 @@
+push
+circle
+250 250 250 150
+display
+clear
+move
+150 150 100
+circle
+250 250 250 150
+display
