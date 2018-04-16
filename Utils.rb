@@ -15,13 +15,11 @@ module Utils
 
 
   ## Write GRID to OUTFILE
-  def self.write_out(file: $OUTFILE, polymat: $POLY_MAT, edgemat: $EDGE_MAT)
+  def self.write_out(file: $OUTFILE, mat: $TEMP_MAT)
     puts "Writing out to #{file}" if $DEBUGGING
     extension = file.dup #filename with any extension
     file[file.index('.')..-1] = '.ppm'
-    $GRID = create_grid()
-    Draw.push_polygon_matrix(polymat: polymat)
-    Draw.push_edge_matrix(edgemat: edgemat)
+    #$GRID = create_grid()
     outfile = File.open(file, 'w')
     outfile.puts "P3 #$RESOLUTION #$RESOLUTION 255" #Header in 1 line
 
@@ -98,8 +96,7 @@ module Utils
         puts "With arguments: "  + args.to_s if $DEBUGGING
         Draw.torus(args[0], args[1], args[2], args[3], args[4])
       when "clear"
-        $EDGE_MAT = Matrix.new(4, 0)
-        $POLY_MAT = Matrix.new(4, 0)
+        $GRID = create_grid()
       when "scale"
         args = file.gets.chomp.split(" ")
         for i in (0...3); args[i] = args[i].to_f end

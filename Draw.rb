@@ -82,21 +82,18 @@ module Draw
   end
 
   # Circle
-  def self.circle(cx, cy, cz, rad, edgemat: $EDGE_MAT)
+  def self.circle(cx, cy, cz, rad)
     temp = Matrix.new(4,0)
     t = 0
     while (t < 1)
-      add_edge(cx + rad * cos($TAU * t), cy + rad * sin($TAU * t), cz, cx + rad * cos($TAU * (t + $dt)), cy + rad * sin($TAU * (t + $dt)), cz, mat: temp)
+      add_edge(cx + rad * cos($TAU * t), cy + rad * sin($TAU * t), cz, cx + rad * cos($TAU * (t + $dt)), cy + rad * sin($TAU * (t + $dt)), cz, temp)
       t += $dt
     end
     MatrixUtils.multiply($COORDSYS.peek(), temp)
-    for i in (0...temp.cols)
-      point = temp.get_col(i)
-      add_point(point[0], point[1], point[2], edgemat)
-    end
+    draw_edge_matrix(temp)
   end
 
-  def self.cubic(ax, bx, cx, dx, ay, by, cy, dy, edgemat: $EDGE_MAT)
+  def self.cubic(ax, bx, cx, dx, ay, by, cy, dy)
     temp = Matrix.new(4,0)
     t = 0
     while t < 1
@@ -105,13 +102,10 @@ module Draw
       t+= $dt
       x1 = ax*(t**3) + bx*(t**2) + cx*t + dx
       y1 = ay*(t**3) + by*(t**2) + cy*t + dy
-      add_edge(x0, y0, 0, x1, y1, 0, mat: temp)
+      add_edge(x0, y0, 0, x1, y1, 0, mat)
     end
     MatrixUtils.multiply($COORDSYS.peek(), temp)
-    for i in (0...temp.cols)
-      point = temp.get_col(i)
-      add_point(point[0], point[1], point[2], edgemat)
-    end
+    draw_edge_matrix(temp)
   end
 
   def self.hermite(x0, y0, x1, y1, dx0, dy0, dx1, dy1)
@@ -149,26 +143,32 @@ module Draw
 
   # x,y,z on top left front corner
   def self.box(x0, y0, z0, width, height, depth)
+    temp = Matrix.new(4, 0)
+
     x1 = x0 + width
     y1 = y0 - height
     z1 = z0 - depth
 
-    add_polygon(x0, y0, z0,   x1, y1, z0,   x1, y0, z0) # Front
-    add_polygon(x0, y0, z0,   x0, y1, z0,   x1, y1, z0)
-    add_polygon(x1, y0, z1,   x0, y1, z1,   x0, y0, z1) # Back
-    add_polygon(x1, y0, z1,   x1, y1, z1,   x0, y1, z1)
-    add_polygon(x1, y0, z0,   x1, y1, z1,   x1, y0, z1) # Right
-    add_polygon(x1, y0, z0,   x1, y1, z0,   x0, y0, z0)
-    add_polygon(x0, y0, z1,   x0, y1, z0,   x0, y0, z0) # Left
-    add_polygon(x0, y0, z1,   x0, y1, z1,   x0, y1, z0)
-    add_polygon(x0, y0, z1,   x1, y0, z0,   x1, y0, z1) # Top
-    add_polygon(x0, y0, z1,   x0, y0, z0,   x1, y0, z0)
-    add_polygon(x0, y1, z0,   x1, y1, z1,   x1, y1, z0) # Bottom
-    add_polygon(x0, y1, z0,   x0, y1, z1,   x1, y1, z1)
+    add_polygon(x0, y0, z0,   x1, y1, z0,   x1, y0, z0,   temp) # Front
+    add_polygon(x0, y0, z0,   x0, y1, z0,   x1, y1, z0,   temp)
+    add_polygon(x1, y0, z1,   x0, y1, z1,   x0, y0, z1,   temp) # Back
+    add_polygon(x1, y0, z1,   x1, y1, z1,   x0, y1, z1,   temp)
+    add_polygon(x1, y0, z0,   x1, y1, z1,   x1, y0, z1,   temp) # Right
+    add_polygon(x1, y0, z0,   x1, y1, z0,   x0, y0, z0,   temp)
+    add_polygon(x0, y0, z1,   x0, y1, z0,   x0, y0, z0,   temp) # Left
+    add_polygon(x0, y0, z1,   x0, y1, z1,   x0, y1, z0,   temp)
+    add_polygon(x0, y0, z1,   x1, y0, z0,   x1, y0, z1,   temp) # Top
+    add_polygon(x0, y0, z1,   x0, y0, z0,   x1, y0, z0,   temp)
+    add_polygon(x0, y1, z0,   x1, y1, z1,   x1, y1, z0,   temp) # Bottom
+    add_polygon(x0, y1, z0,   x0, y1, z1,   x1, y1, z1,   temp)
+
+    MatrixUtils.multiply($COORDSYS.peek(), temp)
+    draw_polygon_matrix(temp)
   end
 
   # Connects a matrix of points in a sphere-like fashion (requires gen_sphere())
   def self.sphere(cx, cy, cz, r)
+    temp = Matrix.new(4, 0)
     points = gen_sphere(cx, cy, cz, r)
     i = 0
     layer_increment = (1/$dt + 1).to_i
@@ -178,9 +178,12 @@ module Draw
       p1 = points.get_col(i + 1)
       p2 = points.get_col((i + layer_increment + 1)%points.cols)
       p3 = points.get_col((i + layer_increment)%points.cols)
-      add_polygon(p0[0], p0[1], p0[2], p1[0], p1[1], p1[2], p2[0], p2[1], p2[2])
-      add_polygon(p0[0], p0[1], p0[2], p2[0], p2[1], p2[2], p3[0], p3[1], p3[2])
+      add_polygon(p0[0], p0[1], p0[2], p1[0], p1[1], p1[2], p2[0], p2[1], p2[2], temp)
+      add_polygon(p0[0], p0[1], p0[2], p2[0], p2[1], p2[2], p3[0], p3[1], p3[2], temp)
     end
+
+    MatrixUtils.multiply($COORDSYS.peek(), temp)
+    draw_polygon_matrix(temp)
   end
 
   # Returns a matrix of all points on surface of a sphere (helper for sphere())
@@ -205,6 +208,7 @@ module Draw
 
   # Connects a matrix of points in a torus-like fashion (requires gen_torus())
   def self.torus(cx, cy, cz, r1, r2)
+    temp = Matrix.new(4, 0)
     points = gen_torus(cx, cy, cz, r1, r2)
     layer_increment = (1/$dt + 1).to_i
     for i in 0...(layer_increment-1)
@@ -213,10 +217,13 @@ module Draw
         p1 = points.get_col( i*layer_increment + j + 1)
         p2 = points.get_col((i*layer_increment + j + layer_increment + 1)%points.cols)
         p3 = points.get_col((i*layer_increment + j + layer_increment)%points.cols)
-        add_polygon(p0[0], p0[1], p0[2], p3[0], p3[1], p3[2], p2[0], p2[1], p2[2])
-        add_polygon(p0[0], p0[1], p0[2], p2[0], p2[1], p2[2], p1[0], p1[1], p1[2])
+        add_polygon(p0[0], p0[1], p0[2], p3[0], p3[1], p3[2], p2[0], p2[1], p2[2], temp)
+        add_polygon(p0[0], p0[1], p0[2], p2[0], p2[1], p2[2], p1[0], p1[1], p1[2], temp)
       end
     end
+
+    MatrixUtils.multiply($COORDSYS.peek(), temp)
+    draw_polygon_matrix(temp)
   end
 
   # Returns a matrix of all points on surface of a torus (helper for torus())
@@ -243,20 +250,20 @@ module Draw
   end
 
   # Add an edge to the global edge matrix
-  def self.add_edge(x0, y0, z0, x1, y1, z1, mat: $EDGE_MAT)
+  def self.add_edge(x0, y0, z0, x1, y1, z1, mat)
     add_point(x0, y0, z0, mat)
     add_point(x1, y1, z1, mat)
   end
 
   # Add a trangle to the global polygon matrix
-  def self.add_polygon(x0, y0, z0, x1, y1, z1, x2, y2, z2, mat: $POLY_MAT)
+  def self.add_polygon(x0, y0, z0, x1, y1, z1, x2, y2, z2, mat)
     add_point(x0, y0, z0, mat)
     add_point(x1, y1, z1, mat)
     add_point(x2, y2, z2, mat)
   end
 
   # Draw the pixels in the matrix
-  def self.push_edge_matrix(edgemat: $EDGE_MAT)
+  def self.draw_edge_matrix(edgemat)
     i = 0
     while i < edgemat.cols
       coord0 = edgemat.get_col(i)
@@ -267,7 +274,7 @@ module Draw
   end
 
   # Draw the pixels in the matrix
-  def self.push_polygon_matrix(polymat: $POLY_MAT)
+  def self.draw_polygon_matrix(polymat)
     i = 0
     while i < polymat.cols
       coord0 = polymat.get_col(i)
