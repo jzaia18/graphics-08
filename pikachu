@@ -1,0 +1,79 @@
+#center everything
+push
+move
+250 270 0
+
+#ears
+push
+move
+-150 100 0
+rotate
+z 40
+scale
+1 2 1
+sphere
+0 0 0 50
+pop
+push
+move
+150 100 0
+rotate
+z -40
+scale
+1 2 1
+sphere
+0 0 0 50
+pop
+
+#head
+push
+move
+0 -80 0
+sphere
+0 0 0 170
+pop
+
+#eyes
+push
+move
+-55 -20 0
+scale
+1 3 1
+sphere
+0 0 0 17
+pop
+push
+move
+55 -20 0
+scale
+1 3 1
+sphere
+0 0 0 17
+pop
+
+#cheeks
+push
+move
+-90 -120 0
+sphere
+0 0 0 40
+pop
+push
+push
+move
+90 -120 0
+sphere
+0 0 0 40
+pop
+
+#mouth
+push
+move
+0 -170 0
+rotate
+x 90
+torus
+0 0 0 5 15
+display
+save
+monochrome_pikachu.png
