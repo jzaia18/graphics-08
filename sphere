@@ -1,4 +1,20 @@
 push
+move
+250 250 0
+rotate
+y -30
+box
+-100 125 50 200 250 100
+display
+clear
+pop
+push
+sphere
+250 250 250 50
+display
+clear
+scale
+1.5 1.5 1.5
 sphere
 250 250 250 50
 display
